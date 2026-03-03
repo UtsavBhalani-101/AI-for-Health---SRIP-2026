@@ -59,7 +59,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(
         description="Generate visualization PDF for a participant folder")
     
-    parser.add_argument("--input",required=True,type=str,help="Path to participant folder (e.g., Data/AP01)")
+    parser.add_argument("--inpu t",required=True,type=str,help="Path to participant folder (e.g., Data/AP01)")
     parser.add_argument("--output", required=False, type=str, default=r"Visualizations/", help="Path where visulization saved")
     args = parser.parse_args()
 
@@ -99,21 +99,21 @@ def load_data(flow_event_path, thorac_path, spo2_path, sleep_profile_path, nasal
     spo2 = pd.read_csv(spo2_path[0], delimiter='\t')
     sleep_profile = pd.read_csv(sleep_profile_path[0], delimiter='\t')
 
-    return nasal, flow_events, thorac, spo2, sleep_profile 
+    return flow_events, thorac, spo2, sleep_profile, nasal 
 
 
 # ^ clean data and make it ready for visulization
-def clean_data(nasal, thorac, spo2, flow_events, sleep_profile):
+def clean_data(flow_events, thorac, spo2, sleep_profile, nasal):
     nasal = clean_signal_files(nasal)
     thorac = clean_signal_files(thorac)
     spo2 = clean_signal_files(spo2)
     sleep_profile = clean_signal_files(sleep_profile, value_type='string')
     flow_events = clean_event_file(flow_events)
     
-    return nasal, thorac, spo2, flow_events, sleep_profile
+    return flow_events, thorac, spo2, sleep_profile, nasal
 
 # ^ generating visualization and saving it as pdf
-def generate_visualization(nasal, thorac, spo2, flow_events, output_path, input_path):
+def generate_visualization(flow_events, thorac, spo2, sleep_profile, nasal, output_path, input_path):
     window = pd.Timedelta(minutes=5)
 
     start_time = max(nasal.index[0], thorac.index[0], spo2.index[0])
@@ -200,13 +200,13 @@ def main():
 
     flow_event_path, thorac_path, spo2_path, sleep_profile_path, nasal_path = validate_input_path(input_path)
 
-    nasal, flow_events, thorac, spo2, sleep_profile = load_data(flow_event_path, thorac_path, spo2_path, sleep_profile_path, nasal_path)
+    flow_events, thorac, spo2, sleep_profile, nasal = load_data(flow_event_path, thorac_path, spo2_path, sleep_profile_path, nasal_path)
 
-    nasal, thorac, spo2, flow_events, sleep_profile = clean_data(nasal, thorac, spo2, flow_events, sleep_profile)
+    flow_events, thorac, spo2, sleep_profile, nasal = clean_data(flow_events, thorac, spo2, sleep_profile, nasal)
 
     participant = os.path.basename(input_path)
     output_pdf = os.path.join(output_path, f"{participant}_visualization.pdf")
-    generate_visualization(nasal, thorac, spo2, flow_events, output_pdf, input_path)
+    generate_visualization(flow_events, thorac, spo2, sleep_profile, nasal, output_pdf, input_path)
 
 
 if __name__ == "__main__":
