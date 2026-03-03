@@ -4,8 +4,9 @@ import argparse
 import logging
 import os
 import glob
-from utils.cleaning import *
-from utils.io import *
+from utils.cleaning import clean_data
+from utils.io import parse_arguments, validate_input_path, load_data
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -106,7 +107,7 @@ def save_output(input_path, output_path, X, y):
     # output_path = os.path.join(output_path, f"{participant_id}_binary.csv")
     # df.to_csv(output_path, index=False)
 
-# * ------ Wrapper (helper) function ------------    
+# * ------ Wrapper function ------------    
  
 def initialize_paths():
     input_path, output_path = parse_arguments(default_output_path=r"Dataset_binary/")
