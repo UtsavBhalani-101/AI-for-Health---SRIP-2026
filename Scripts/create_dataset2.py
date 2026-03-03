@@ -1,3 +1,4 @@
+from collections import Counter
 import numpy as np
 import pandas as pd
 import argparse
@@ -92,17 +93,22 @@ def labeling_windows(window_times, flow_events):
 # ^ combining X, y and participant id into one df and save the output
 def save_output(input_path, output_path, X, y):
     participant_id = os.path.basename(input_path)
-    
-    df = pd.DataFrame(X)
-    df["label"] = y
-    df['participant_id'] = participant_id
-    
-    cols = ["participant_id", "label"] + [c for c in df.columns if c not in ("participant_id", "label")]
-    df = df[cols]
-    print(df)
-    
-    from collections import Counter
-    print(Counter(y))
+
+    feature_cols = [f"f_{i}" for i in range(X.shape[1])]
+    df = pd.DataFrame(X, columns=feature_cols)
+
+    df.insert(0, "label", y)
+    df.insert(0, "participant_id", participant_id)
+
+    os.makedirs(output_path, exist_ok=True)
+
+    output_file = os.path.join(output_path, f"{participant_id}_binary.csv")
+    df.to_csv(output_file, index=False)
+
+    class_counts = Counter(y)
+    logger.info(f"Saved dataset to: {output_file}")
+    logger.info(f"Dataset shape: {df.shape}")
+    logger.info(f"Class distribution: {dict(class_counts)}")
     
     # output_path = os.path.join(output_path, f"{participant_id}_binary.csv")
     # df.to_csv(output_path, index=False)
