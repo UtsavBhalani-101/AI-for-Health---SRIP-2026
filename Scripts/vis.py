@@ -8,6 +8,18 @@ import logging
 import os
 import glob
 
+from utils.cleaning import clean_data
+from utils.io import parse_arguments, validate_input_path, load_data
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+
+logger = logging.getLogger(__name__)
+
 # & helper func - clean signal files metadata
 def clean_signal_files(df, value_type='integer'):
     df = df.iloc[5: , :].copy()
@@ -59,7 +71,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(
         description="Generate visualization PDF for a participant folder")
     
-    parser.add_argument("--inpu t",required=True,type=str,help="Path to participant folder (e.g., Data/AP01)")
+    parser.add_argument("--input",required=True,type=str,help="Path to participant folder (e.g., Data/AP01)")
     parser.add_argument("--output", required=False, type=str, default=r"Visualizations/", help="Path where visulization saved")
     args = parser.parse_args()
 
@@ -122,6 +134,132 @@ def generate_visualization(flow_events, thorac, spo2, sleep_profile, nasal, outp
     current_time = start_time
 
     with PdfPages(output_path) as pdf:
+        
+        # ======================================
+        #  MACRO FULL TIMELINE PAGE (FIRST PAGE)
+        # ======================================
+
+        fig_macro, axs_macro = plt.subplots(
+            3, 1,
+            figsize=(20, 8),
+            sharex=True
+        )
+
+        ax_flow_m, ax_thorac_m, ax_spo2_m = axs_macro
+
+        # Remove internal padding completely
+        fig_macro.subplots_adjust(
+            left=0.05,
+            right=0.995,
+            top=0.92,
+            bottom=0.08,
+            hspace=0.15
+        )
+
+        # Downsample to 1-second resolution for the macro overview
+        # (reduces point count from ~millions to ~hours×3600, much faster & cleaner)
+        nasal_macro  = nasal.resample("2s").mean()
+        thorac_macro = thorac.resample("2s").mean()
+        spo2_macro   = spo2.resample("2s").mean()
+        sleep_macro = sleep_profile.resample("30s").ffill()
+        
+        fig_macro, axs_macro = plt.subplots(
+            4, 1,
+            figsize=(32, 12),
+            sharex=True
+        )
+
+        ax_flow_m, ax_thorac_m, ax_spo2_m, ax_sleep_m = axs_macro
+        
+        # Convert stage labels to numeric
+        stage_map = {
+            "Wake": 0,
+            "N1": 1,
+            "N2": 2,
+            "N3": 3,
+            "REM": 4
+        }
+
+        sleep_macro['StageNum'] = sleep_macro['Value'].map(stage_map)
+
+        ax_sleep_m.step(
+            sleep_macro.index,
+            sleep_macro['StageNum'],
+            where='post',
+            linewidth=2,
+            color='black'
+        )
+
+        ax_sleep_m.set_ylabel("Sleep Stage")
+        ax_sleep_m.set_yticks(list(stage_map.values()))
+        ax_sleep_m.set_yticklabels(list(stage_map.keys()))
+
+        # Plot signals (resampled)
+        ax_flow_m.plot(nasal_macro.index, nasal_macro['Value'],
+                       color='tab:blue',
+                       linewidth=1.2,
+                       label="Nasal Flow")
+
+        ax_thorac_m.plot(thorac_macro.index, thorac_macro['Value'],
+                         color='tab:orange',
+                         linewidth=1.2,
+                         label="Thoracic/Abdominal Resp.")
+
+        ax_spo2_m.plot(spo2_macro.index, spo2_macro['Value'],
+                       color='tab:green',
+                       linewidth=1.2,
+                       label="SpO₂")
+
+        # Remove x margins (important!)
+        for ax in axs_macro:
+            ax.margins(x=0)
+            ax.set_xlim(nasal.index[0], nasal.index[-1])
+            ax.grid(True, alpha=0.15)
+
+        # Labels
+        ax_flow_m.set_ylabel("Nasal Flow (L/min)")
+        ax_thorac_m.set_ylabel("Resp. Amplitude")
+        ax_spo2_m.set_ylabel("SpO₂ (%)")
+        ax_spo2_m.set_xlabel("Time")
+
+        ax_flow_m.legend(loc="upper right")
+        ax_thorac_m.legend(loc="upper right")
+        ax_spo2_m.legend(loc="upper right")
+
+        # Highlight abnormalities ONLY on nasal
+        for _, row in flow_events.iterrows():
+
+            if row['Disorder'] == "Obstructive Apnea":
+                color = 'red'
+            elif row['Disorder'] == "Hypopnea":
+                color = 'yellow'
+            else:
+                color = 'purple'
+
+            ax_flow_m.axvspan(
+                row['start_time'],
+                row['end_time'],
+                color=color,
+                alpha=0.3
+            )
+
+        # Clean hour-based ticks
+        locator = mdates.HourLocator(interval=1)
+        formatter = mdates.DateFormatter('%H:%M')
+
+        ax_spo2_m.xaxis.set_major_locator(locator)
+        ax_spo2_m.xaxis.set_major_formatter(formatter)
+
+        participant = os.path.basename(input_path)
+
+        fig_macro.suptitle(
+            f"{participant} - Full Night Overview",
+            fontsize=18,
+            fontweight='bold'
+        )
+
+        pdf.savefig(fig_macro)
+        plt.close(fig_macro)
 
         while current_time < end_time:
 
@@ -133,23 +271,53 @@ def generate_visualization(flow_events, thorac, spo2, sleep_profile, nasal, outp
 
             fig, axs = plt.subplots(3, 1, figsize=(18, 9), sharex=True)
 
-            # --- Plot signals ---
-            axs[0].plot(seg_flow.index, seg_flow['Value'], color='tab:blue', linewidth=0.8)
-            axs[0].set_ylabel("Flow")
+            ax_flow, ax_thorac, ax_spo2 = axs
 
-            axs[1].plot(seg_thorac.index, seg_thorac['Value'], color='tab:orange', linewidth=0.8)
-            axs[1].set_ylabel("Thorac")
+            # =========================
+            # 1️⃣ BOLD SIGNAL LINES
+            # =========================
 
-            axs[2].plot(seg_spo2.index, seg_spo2['Value'], color='tab:green', linewidth=1.0)
-            axs[2].set_ylabel("SpO₂")
-            axs[2].set_xlabel("Time")
+            ax_flow.plot(seg_flow.index, seg_flow['Value'],
+                         color='tab:blue',
+                         linewidth=1.8,
+                         label="Nasal Flow")
 
-            # --- Add grid ---
+            ax_thorac.plot(seg_thorac.index, seg_thorac['Value'],
+                           color='tab:orange',
+                           linewidth=1.8,
+                           label="Thoracic/Abdominal Resp.")
+
+            ax_spo2.plot(seg_spo2.index, seg_spo2['Value'],
+                         color='tab:green',
+                         linewidth=1.8,
+                         label="SpO₂")
+
+            # =========================
+            # 2️⃣ Proper Y Labels + Legends
+            # =========================
+
+            ax_flow.set_ylabel("Nasal Flow (L/min)")
+            ax_flow.legend(loc="upper right")
+
+            ax_thorac.set_ylabel("Resp. Amplitude")
+            ax_thorac.legend(loc="upper right")
+
+            ax_spo2.set_ylabel("SpO₂ (%)")
+            ax_spo2.legend(loc="upper right")
+            ax_spo2.set_xlabel("Time")
+
+            # =========================
+            # 3️⃣ Grid + Limits
+            # =========================
+
             for ax in axs:
-                ax.grid(True, alpha=0.3)
+                ax.grid(True, alpha=0.2)
                 ax.set_xlim(current_time, window_end)
 
-            # --- Highlight Events ---
+            # =========================
+            # 4️⃣ Highlight ONLY Nasal Plot
+            # =========================
+
             events_in_window = flow_events[
                 (flow_events['start_time'] <= window_end) &
                 (flow_events['end_time'] >= current_time)
@@ -167,25 +335,62 @@ def generate_visualization(flow_events, thorac, spo2, sleep_profile, nasal, outp
                 else:
                     color = 'purple'
 
-                for ax in axs:
-                    ax.axvspan(event_start, event_end, color=color, alpha=0.3)
+                # Highlight ONLY nasal
+                ax_flow.axvspan(event_start, event_end,
+                                color=color,
+                                alpha=0.3)
 
-            # --- Improve time ticks ---
-            locator = mdates.MinuteLocator(interval=1)   # tick every 1 minute
-            formatter = mdates.DateFormatter('%H:%M:%S')
+                # =========================
+                # 5️⃣ Event Name On Top
+                # =========================
 
-            axs[-1].xaxis.set_major_locator(locator)
-            axs[-1].xaxis.set_major_formatter(formatter)
+                ax_flow.text(
+                    event_start + (event_end - event_start) / 2,
+                    ax_flow.get_ylim()[1] * 0.9,
+                    row['Disorder'],
+                    ha='center',
+                    fontsize=8,
+                    fontweight='bold'
+                )
 
-            # --- Title ---
+            # =========================
+            # 6️⃣ Clean Time Axis (10s spacing)
+            # =========================
+
+            # Major ticks every 10 seconds
+            major_locator = mdates.SecondLocator(interval=10)
+            major_formatter = mdates.DateFormatter('%H:%M:%S')
+
+            # Minor ticks every 5 seconds (optional but cleaner)
+            minor_locator = mdates.SecondLocator(interval=5)
+
+            ax_spo2.xaxis.set_major_locator(major_locator)
+            ax_spo2.xaxis.set_major_formatter(major_formatter)
+            ax_spo2.xaxis.set_minor_locator(minor_locator)
+
+            # Darker vertical lines for major ticks
+            ax_spo2.grid(True, which='major', axis='x', linewidth=0.9, alpha=0.6)
+
+            # Lighter minor vertical lines
+            ax_spo2.grid(True, which='minor', axis='x', linewidth=0.5, alpha=0.3)
+
+            # Optional: rotate labels slightly if crowded
+            plt.setp(ax_spo2.xaxis.get_majorticklabels(), rotation=45)
+
+            # =========================
+            # 7️⃣ Proper Title Format
+            # =========================
+
             participant = os.path.basename(input_path)
+
             fig.suptitle(
-                f"{participant} | {current_time.strftime('%H:%M')} - {window_end.strftime('%H:%M')}",
+                f"{participant} - {current_time.strftime('%Y-%m-%d %H:%M')} "
+                f"to {window_end.strftime('%H:%M')}",
                 fontsize=14,
                 fontweight='bold'
             )
 
-            plt.tight_layout(rect=[0, 0, 1, 0.96])
+            plt.tight_layout(rect=[0, 0, 1, 0.95])
 
             pdf.savefig(fig)
             plt.close(fig)
