@@ -7,6 +7,7 @@ import os
 import glob
 from utils.cleaning import clean_data
 from utils.io import parse_arguments, validate_input_path, load_data
+from utils.signal_processing import bandpass_filter
 
 
 logging.basicConfig(
@@ -116,9 +117,20 @@ def save_output(input_path, output_path, X, y):
 # * ------ Wrapper function ------------    
  
 def initialize_paths():
-    input_path, output_path = parse_arguments(default_output_path=r"Dataset_binary/")
-    logger.info(f"Arguments parsed — input: {input_path} | output: {output_path}")
-    return input_path, output_path
+    parser = argparse.ArgumentParser(description="Create breathing dataset")
+    
+    parser.add_argument("--input", required=True, type=str)
+    parser.add_argument("--output", required=False, default="Dataset_binary/")
+    parser.add_argument("--filter", action="store_true",
+                        help="Apply bandpass filtering to nasal signal")
+
+    args = parser.parse_args()
+    
+    input_path = os.path.abspath(args.input)
+    output_path = os.path.abspath(args.output)
+    logger.info(f"Arguments parsed — input: {input_path} | output: {output_path} | filter: {args.filter}")
+    
+    return input_path, output_path, args.filter
 
 def path_validation(input_path):
     flow_event_path, thorac_path, spo2_path, sleep_profile_path, nasal_path = validate_input_path(input_path)
@@ -141,13 +153,17 @@ def preprocessing_data(flow_events, thorac, spo2, sleep_profile, nasal):
 def main():
     logger.info("Starting dataset creation pipeline")
     try:
-        input_path, output_path = initialize_paths()
+        input_path, output_path, apply_filter = initialize_paths()
 
         flow_event_path, thorac_path, spo2_path, sleep_profile_path, nasal_path = path_validation(input_path)
 
         flow_events, thorac, spo2, sleep_profile, nasal = get_data(flow_event_path, thorac_path, spo2_path, sleep_profile_path, nasal_path)
 
         flow_events, thorac, spo2, sleep_profile, nasal = preprocessing_data(flow_events, thorac, spo2, sleep_profile, nasal)
+
+        if apply_filter:
+            logger.info("Applying bandpass filter to nasal signal")
+            nasal = bandpass_filter(nasal)
 
         window_times, X = create_windows(nasal)
 
