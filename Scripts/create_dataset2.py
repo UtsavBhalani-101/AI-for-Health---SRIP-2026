@@ -78,9 +78,7 @@ def labeling_windows(window_times, flow_events):
         labels.append(assigned_label)
         
     
-    # Binary mapping: 0 = Normal, 1 = any abnormality
-    # Using a condition instead of a hardcoded dict so any new/unseen
-    # event type is automatically treated as abnormal (1) — no KeyError.
+
     unknown = set(l for l in labels if l != "Normal")
     if unknown:
         logger.info(f"Abnormal event types found: {sorted(unknown)}")
@@ -111,7 +109,7 @@ def save_output(input_path, output_path, X, y):
 # * ------ Wrapper (helper) function ------------    
  
 def initialize_paths():
-    input_path, output_path = parse_arguments(default_output_path=r"Dataset/")
+    input_path, output_path = parse_arguments(default_output_path=r"Dataset_binary/")
     logger.info(f"Arguments parsed — input: {input_path} | output: {output_path}")
     return input_path, output_path
 
