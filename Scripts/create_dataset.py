@@ -81,7 +81,9 @@ def labeling_windows(window_times, flow_events):
     label_map = {
         "Normal": 0,
         "Hypopnea": 1,
-        "Obstructive Apnea": 2
+        "Obstructive Apnea": 2,
+        "Body event": 3,
+        "Mixed Apnea": 4
     }
 
     y = np.array([label_map[l] for l in labels])
@@ -101,7 +103,7 @@ def save_output(input_path, output_path, X, y):
     df = df[cols]
     print(df)
     
-    os.path.join(output_path, f"{participant_id}.csv")
+    output_path = os.path.join(output_path, f"{participant_id}.csv")
     df.to_csv(output_path, index=False)
 
 # * ------ Wrapper (helper) function ------------    
