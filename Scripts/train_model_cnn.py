@@ -34,8 +34,23 @@ def train_lopo(df):
     y = df["label"].values
     groups = df["participant_id"].values
 
-    # reshape for CNN: (samples, channels, sequence)
-    X = X.reshape(-1, 1, X.shape[1])
+    logo = LeaveOneGroupOut()
+    device = torch.device("cpu")
+
+    for fold, (train_idx, test_idx) in enumerate(logo.split(X, y, groups)):
+        print(f"\n=== Fold {fold+1} ===")
+
+        X_train, X_test = X[train_idx], X[test_idx]
+        y_train, y_test = y[train_idx], y[test_idx]
+
+        mean = X_train.mean(axis=0)
+        std = X_train.std(axis=0) + 1e-8
+
+        X_train = (X_train - mean) / std
+        X_test = (X_test - mean) / std
+
+        X_train = X_train.reshape(-1, 1, X_train.shape[1])
+        X_test = X_test.reshape(-1, 1, X_test.shape[1])
 
     logo = LeaveOneGroupOut()
 

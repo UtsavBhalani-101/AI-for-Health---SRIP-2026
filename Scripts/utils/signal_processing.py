@@ -2,7 +2,7 @@ import numpy as np
 from scipy.signal import butter, filtfilt
 
 
-def bandpass_filter(df, lowcut=0.1, highcut=0.5, order=4):
+def bandpass_filter(df, lowcut=0.17, highcut=0.4, order=4):
     """
     Apply Butterworth bandpass filter to a time-series dataframe.
     Assumes:
