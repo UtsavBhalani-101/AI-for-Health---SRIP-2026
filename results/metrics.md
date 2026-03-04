@@ -4,7 +4,9 @@
 **Evaluation Strategy:** Leave-One-Participant-Out Cross-Validation (LOPO)  
 **Task:** Binary classification — Normal (0) vs. Abnormal (1) breathing windows  
 **Dataset:** 5 participants, 30-second windows with 50% overlap 
+
 The final dataset contained approximately 8,700 windows across five participants, with abnormal breathing events representing a small fraction of the total windows.
+
 ---
 
 ## Design Decision — Binary vs. Multi-Class Labeling
