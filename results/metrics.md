@@ -3,8 +3,8 @@
 **Model:** Simple 1D CNN  
 **Evaluation Strategy:** Leave-One-Participant-Out Cross-Validation (LOPO)  
 **Task:** Binary classification — Normal (0) vs. Abnormal (1) breathing windows  
-**Dataset:** 5 participants, 30-second windows with 50% overlap  
-
+**Dataset:** 5 participants, 30-second windows with 50% overlap 
+The final dataset contained approximately 8,700 windows across five participants, with abnormal breathing events representing a small fraction of the total windows.
 ---
 
 ## Design Decision — Binary vs. Multi-Class Labeling
@@ -94,9 +94,15 @@ Performance also varies considerably across participants (accuracy ranging from 
 
 The dataset is small (5 participants) and strongly class-imbalanced, which limits model generalization. Future work could include using additional signals (thoracic movement and SpO₂), improved class balancing strategies, and longer training with early stopping. Incorporating multi-channel inputs and larger datasets would likely improve detection performance.
 
+
 ## Baseline Models (Additional Experiments)
 
 Before training the CNN model, classical machine learning baselines were evaluated to understand how well simpler models perform on the dataset. Logistic Regression and XGBoost were trained using the same Leave-One-Participant-Out (LOPO) evaluation strategy.
+
+Two input representations were evaluated:
+
+1. **Raw signal windows** (960-sample nasal airflow segments)
+2. **Feature-engineered representations**, where statistical summaries such as mean, standard deviation, minimum, and maximum values were computed from each window.
 
 These models were trained on the same windowed dataset and compared against the CNN results.
 
@@ -106,10 +112,12 @@ These models were trained on the same windowed dataset and compared against the 
 | XGBoost             | Showed stronger generalization across participants compared to Logistic Regression |
 | 1D CNN              | Achieved higher recall but produced many false positives due to class imbalance    |
 
-These experiments indicate that while deep learning models can capture temporal patterns in the signal, simpler tree-based models may generalize better under strong subject-level distribution shifts and small datasets.
+These experiments suggest that classical models trained on feature-engineered inputs can achieve stronger overall accuracy on this small dataset, while the CNN prioritizes recall by detecting more abnormal windows at the cost of increased false positives.
 
 | Model               | Accuracy | Precision | Recall | F1    |
 | ------------------- | -------- | --------- | ------ | ----- |
 | Logistic Regression | ~0.63    | ~0.16     | ~0.68  | ~0.26 |
 | XGBoost             | ~0.79    | ~0.16     | ~0.34  | ~0.21 |
 | CNN                 | ~0.26    | ~0.09     | ~0.79  | ~0.15 |
+
+Multi-class labeling was also evaluated, but it performed significantly worse due to the extreme class imbalance and limited number of samples per event category.
