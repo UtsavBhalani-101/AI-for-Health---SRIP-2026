@@ -1,6 +1,10 @@
 import os
+import sys
 import glob
 import argparse
+
+# Add project root to path so 'models' package can be found
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import numpy as np
 import pandas as pd
 import torch
@@ -83,7 +87,7 @@ def train_lopo(df):
         with torch.no_grad():
             outputs = model(X_test).squeeze()
             probs = torch.sigmoid(outputs)
-            preds = (probs > 0.55).int()
+            preds = (probs > 0.5).int()
 
         print(classification_report(y_test.cpu(), preds.cpu()))
         print("Confusion Matrix:")

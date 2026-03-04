@@ -123,7 +123,7 @@ def generate_visualization(flow_events, thorac, spo2, sleep_profile, nasal, outp
         ax_thorac_m.legend(loc="upper right")
         ax_spo2_m.legend(loc="upper right")
 
-        # Highlight abnormalities ONLY on nasal
+        # Highlight abnormalities across all 3 signal subplots
         for _, row in flow_events.iterrows():
 
             if row['Disorder'] == "Obstructive Apnea":
@@ -133,12 +133,13 @@ def generate_visualization(flow_events, thorac, spo2, sleep_profile, nasal, outp
             else:
                 color = 'purple'
 
-            ax_flow_m.axvspan(
-                row['start_time'],
-                row['end_time'],
-                color=color,
-                alpha=0.3
-            )
+            for ax_m in (ax_flow_m, ax_thorac_m, ax_spo2_m):
+                ax_m.axvspan(
+                    row['start_time'],
+                    row['end_time'],
+                    color=color,
+                    alpha=0.3
+                )
 
         # Clean hour-based ticks
         locator = mdates.HourLocator(interval=1)
@@ -232,13 +233,14 @@ def generate_visualization(flow_events, thorac, spo2, sleep_profile, nasal, outp
                 else:
                     color = 'purple'
 
-                # Highlight ONLY nasal
-                ax_flow.axvspan(event_start, event_end,
-                                color=color,
-                                alpha=0.3)
+                # Highlight all 3 signal subplots
+                for ax in (ax_flow, ax_thorac, ax_spo2):
+                    ax.axvspan(event_start, event_end,
+                               color=color,
+                               alpha=0.3)
 
                 # =========================
-                # 5️⃣ Event Name On Top
+                # 5️⃣ Event Name On Top (nasal only)
                 # =========================
 
                 ax_flow.text(
