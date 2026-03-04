@@ -89,8 +89,6 @@ internship/
 - Label each window based on **>50% overlap** with annotated abnormal events
 - **Binary labels**: `0` = Normal, `1` = Abnormal
 
-- ### 3. Dataset Creation
-
 - Signals are segmented into **30-second windows with 50% overlap**
 - Windows are labeled based on **>50% overlap** with annotated breathing events
 - Binary labels are used:
