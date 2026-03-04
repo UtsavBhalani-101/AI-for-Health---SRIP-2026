@@ -1,6 +1,6 @@
 #  Sleep Breathing Irregularity Detection — SRIP 2026
 
-> Automated detection of abnormal breathing events during sleep using multi-channel physiological signals and deep learning.
+ Automated detection of abnormal breathing events during sleep using multi-channel physiological signals and deep learning.
 
 ---
 
