@@ -169,7 +169,7 @@ python Scripts/vis.py --input Data/AP01
 Generate the windowed and labeled dataset from all participant folders:
 
 ```bash
-python Scripts/create_dataset.py --input Data
+python Scripts/create_dataset.py --input Data/AP01
 ```
 
 > Default output: `Dataset/` — override with `--output <path>`  
@@ -177,7 +177,7 @@ python Scripts/create_dataset.py --input Data
 
 ```bash
 # With optional arguments
-python Scripts/create_dataset.py --input Data --output Dataset/ --filter
+python Scripts/create_dataset.py --input Data/AP01 --output Dataset/ --filter
 ```
 
 ### 3. Train & Evaluate Model
@@ -185,7 +185,7 @@ python Scripts/create_dataset.py --input Data --output Dataset/ --filter
 Run LOPO cross-validation and save metrics:
 
 ```bash
-python Scripts/train_model.py --dataset_path Dataset/
+python Scripts/train_model_cnn.py --dataset_path Dataset/
 ```
 
 ---
