@@ -19,13 +19,13 @@ The task was therefore reformulated as **binary classification**: all abnormal b
 
 ## Per-Fold Results
 
-| Fold | Test Participant | Accuracy | Precision (Abnormal) | Recall (Abnormal) | F1 (Abnormal) |
-|------|-----------------|----------|----------------------|-------------------|---------------|
-| 1    | AP01            | 0.30     | 0.06                 | 0.82              | 0.11          |
-| 2    | AP02            | 0.09     | 0.09                 | 0.99              | 0.16          |
-| 3    | AP03            | 0.01     | 0.01                 | 1.00              | 0.02          |
-| 4    | AP04            | 0.51     | 0.11                 | 0.62              | 0.19          |
-| 5    | AP05            | 0.41     | 0.18                 | 0.51              | 0.26          |
+| Fold | Accuracy | Precision | Recall | F1 |
+|-----|------|------|------|------|
+| AP01 | 0.59 | 0.08 | 0.65 | 0.14 |
+| AP02 | 0.59 | 0.12 | 0.62 | 0.21 |
+| AP03 | 0.01 | 0.01 | 1.00 | 0.02 |
+| AP04 | 0.61 | 0.14 | 0.57 | 0.22 |
+| AP05 | 0.57 | 0.25 | 0.52 | 0.33 |
 
 ---
 
@@ -33,38 +33,43 @@ The task was therefore reformulated as **binary classification**: all abnormal b
 
 ### Fold 1 — Test: AP01
 
-|                | Predicted Normal | Predicted Abnormal |
-|----------------|------------------|--------------------|
-| **True Normal**   | 473              | 1243               |
-| **True Abnormal** | 17               | 77                 |
+|                   | Predicted Normal | Predicted Abnormal |
+| ----------------- | ---------------- | ------------------ |
+| **True Normal**   | 1013             | 703                |
+| **True Abnormal** | 33               | 61                 |
+
 
 ### Fold 2 — Test: AP02
 
-|                | Predicted Normal | Predicted Abnormal |
-|----------------|------------------|--------------------|
-| **True Normal**   | 18               | 1591               |
-| **True Abnormal** | 1                | 148                |
+|                   | Predicted Normal | Predicted Abnormal |
+| ----------------- | ---------------- | ------------------ |
+| **True Normal**   | 952              | 657                |
+| **True Abnormal** | 56               | 93                 |
+
 
 ### Fold 3 — Test: AP03
 
-|                | Predicted Normal | Predicted Abnormal |
-|----------------|------------------|--------------------|
-| **True Normal**   | 4                | 1660               |
+|                   | Predicted Normal | Predicted Abnormal |
+| ----------------- | ---------------- | ------------------ |
+| **True Normal**   | 3                | 1661               |
 | **True Abnormal** | 0                | 21                 |
+
 
 ### Fold 4 — Test: AP04
 
-|                | Predicted Normal | Predicted Abnormal |
-|----------------|------------------|--------------------|
-| **True Normal**   | 858              | 879                |
-| **True Abnormal** | 70               | 113                |
+|                   | Predicted Normal | Predicted Abnormal |
+| ----------------- | ---------------- | ------------------ |
+| **True Normal**   | 1071             | 666                |
+| **True Abnormal** | 78               | 105                |
+
 
 ### Fold 5 — Test: AP05
 
-|                | Predicted Normal | Predicted Abnormal |
-|----------------|------------------|--------------------|
-| **True Normal**   | 481              | 767                |
-| **True Abnormal** | 158              | 165                |
+|                   | Predicted Normal | Predicted Abnormal |
+| ----------------- | ---------------- | ------------------ |
+| **True Normal**   | 729              | 519                |
+| **True Abnormal** | 154              | 169                |
+
 
 ---
 
@@ -72,20 +77,21 @@ The task was therefore reformulated as **binary classification**: all abnormal b
 
 | Metric                    | Value  |
 |---------------------------|--------|
-| **Accuracy**              | 0.26   |
-| **Precision (Abnormal)**  | 0.09   |
-| **Recall (Abnormal)**     | 0.79   |
-| **F1-Score (Abnormal)**   | 0.15   |
+| **Accuracy**              | ~0.47  |
+| **Precision (Abnormal)**  | ~0.12  |
+| **Recall (Abnormal)**     | ~0.67  |
+| **F1-Score (Abnormal)**   | ~0.18  |
 
 ---
 
 ## Interpretation
 
-The CNN achieved **high recall (0.79)** but **very low precision (0.09)**. This means the model detects most abnormal breathing events but produces many false positives by incorrectly labeling normal windows as abnormal. As a result, the overall accuracy is low (0.26).
+The CNN achieves **moderate recall (~0.67)** but **low precision (~0.12)**.  
+This means the model detects many abnormal breathing events but still produces a large number of false positives by incorrectly labeling normal windows as abnormal.
 
-This behavior is largely due to the **strong class imbalance** in the dataset, where normal breathing windows significantly outnumber abnormal ones. Although class weighting was applied in the loss function, the model still tends to overpredict the abnormal class.
+This behavior is largely due to the **strong class imbalance** in the dataset, where normal breathing windows significantly outnumber abnormal ones. Although class weighting was applied in the loss function, the model still tends to overpredict abnormal windows.
 
-Performance also varies considerably across participants (accuracy ranging from 0.01 to 0.51), indicating **subject-level distribution shift** in the physiological signals. This highlights the difficulty of generalizing across individuals and is exactly the type of challenge that Leave-One-Participant-Out (LOPO) evaluation is designed to expose.
+Performance also varies considerably across participants (accuracy ranging from 0.01 to 0.61), indicating **subject-level distribution shift** in the physiological signals. This highlights the difficulty of generalizing across individuals and is exactly the challenge that Leave-One-Participant-Out (LOPO) evaluation is designed to expose.
 
 
 ---
@@ -112,4 +118,4 @@ These experiments indicate that while deep learning models can capture temporal 
 | ------------------- | -------- | --------- | ------ | ----- |
 | Logistic Regression | ~0.63    | ~0.16     | ~0.68  | ~0.26 |
 | XGBoost             | ~0.79    | ~0.16     | ~0.34  | ~0.21 |
-| CNN                 | ~0.26    | ~0.09     | ~0.79  | ~0.15 |
+| CNN                 | ~0.47    | ~0.12     | ~0.67  | ~0.18 |

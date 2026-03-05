@@ -89,8 +89,6 @@ internship/
 - Label each window based on **>50% overlap** with annotated abnormal events
 - **Binary labels**: `0` = Normal, `1` = Abnormal
 
-- ### 3. Dataset Creation
-
 - Signals are segmented into **30-second windows with 50% overlap**
 - Windows are labeled based on **>50% overlap** with annotated breathing events
 - Binary labels are used:
@@ -127,13 +125,25 @@ The CNN model was evaluated using Leave-One-Participant-Out cross-validation.
 
 | Fold | Accuracy | Precision | Recall | F1 |
 |-----|------|------|------|------|
-| AP01 | 0.30 | 0.06 | 0.82 | 0.11 |
-| AP02 | 0.09 | 0.09 | 0.99 | 0.16 |
+| AP01 | 0.59 | 0.08 | 0.65 | 0.14 |
+| AP02 | 0.59 | 0.12 | 0.62 | 0.21 |
 | AP03 | 0.01 | 0.01 | 1.00 | 0.02 |
-| AP04 | 0.51 | 0.11 | 0.62 | 0.19 |
-| AP05 | 0.41 | 0.18 | 0.51 | 0.26 |
+| AP04 | 0.61 | 0.14 | 0.57 | 0.22 |
+| AP05 | 0.57 | 0.25 | 0.52 | 0.33 |
 
 The model achieves high recall for abnormal breathing events but produces many false positives due to strong class imbalance and subject-level variability.
+
+### Baseline Models
+
+To provide a comparison, classical machine learning models were also evaluated using the same LOPO strategy.
+
+| Model | Accuracy | Precision | Recall | F1 |
+|------|------|------|------|------|
+| Logistic Regression | ~0.63 | ~0.16 | ~0.68 | ~0.26 |
+| XGBoost | ~0.79 | ~0.16 | ~0.34 | ~0.21 |
+| CNN | ~0.47 | ~0.12 | ~0.67 | ~0.18 |
+
+Tree-based models such as XGBoost showed stronger overall accuracy, while the CNN achieved higher recall but produced more false positives due to class imbalance.
 
 ---
 

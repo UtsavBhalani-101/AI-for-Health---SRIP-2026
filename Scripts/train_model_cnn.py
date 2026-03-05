@@ -38,30 +38,24 @@ def train_lopo(df):
     device = torch.device("cpu")
 
     for fold, (train_idx, test_idx) in enumerate(logo.split(X, y, groups)):
+
         print(f"\n=== Fold {fold+1} ===")
 
         X_train, X_test = X[train_idx], X[test_idx]
         y_train, y_test = y[train_idx], y[test_idx]
 
+        # normalization (train statistics only)
         mean = X_train.mean(axis=0)
         std = X_train.std(axis=0) + 1e-8
 
         X_train = (X_train - mean) / std
         X_test = (X_test - mean) / std
 
+        # reshape for CNN
         X_train = X_train.reshape(-1, 1, X_train.shape[1])
         X_test = X_test.reshape(-1, 1, X_test.shape[1])
 
-    logo = LeaveOneGroupOut()
-
-    device = torch.device("cpu")
-
-    for fold, (train_idx, test_idx) in enumerate(logo.split(X, y, groups)):
-        print(f"\n=== Fold {fold+1} ===")
-
-        X_train, X_test = X[train_idx], X[test_idx]
-        y_train, y_test = y[train_idx], y[test_idx]
-
+        # tensors
         X_train = torch.tensor(X_train, dtype=torch.float32).to(device)
         y_train = torch.tensor(y_train, dtype=torch.float32).to(device)
 
@@ -83,23 +77,28 @@ def train_lopo(df):
         criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
         optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-        # Training loop
         for epoch in range(15):
+
             model.train()
             total_loss = 0
+
             for xb, yb in train_loader:
+
                 optimizer.zero_grad()
                 outputs = model(xb).squeeze()
                 loss = criterion(outputs, yb)
+
                 loss.backward()
                 optimizer.step()
+
                 total_loss += loss.item()
 
             print(f"Epoch {epoch+1}, Loss: {total_loss:.4f}")
 
-        # Evaluation
         model.eval()
+
         with torch.no_grad():
+
             outputs = model(X_test).squeeze()
             probs = torch.sigmoid(outputs)
             preds = (probs > 0.5).int()
@@ -107,8 +106,6 @@ def train_lopo(df):
         print(classification_report(y_test.cpu(), preds.cpu()))
         print("Confusion Matrix:")
         print(confusion_matrix(y_test.cpu(), preds.cpu()))
-
-
 def main():
     args = parse_arguments()
     df = load_dataset(args.dataset_path)
